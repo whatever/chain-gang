@@ -1,5 +1,4 @@
 import emoji
-import pdb
 import requests
 import time
 
@@ -54,7 +53,6 @@ class ChainEmailsScraper(object):
             for p in a.find_all("p"):
                 if emoji.emoji_count(p.text) > 3:
                     yield p.text
-
 
     def posts(self) -> Iterable[Any]:
 
