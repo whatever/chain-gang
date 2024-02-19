@@ -21,4 +21,5 @@ class LlamaPredictor(object):
 
     def generate(self, text: str) -> Any:
         """Return a response"""
+
         return self.llama(text)
