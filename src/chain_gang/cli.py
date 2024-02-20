@@ -1,17 +1,27 @@
 import argparse
 import csv
 
-from chain_gang.scraper import ChainTextsScraper, ChainEmailsScraper
+from chain_gang.scraper import ChainTextsScraper, ChainEmailsScraper, EmojiPastaScraper
 from chain_gang.predict import LlamaPredictor
 
 
 def scrape_chain_texts():
     """..."""
 
+
+    scraper = EmojiPastaScraper()
+
+    for i, post in enumerate(scraper.posts()):
+        print(f"{i} => {post}")
+
+
+    return
+
     with open("chain_texts.csv", "w") as f:
 
         header = ["id", "text", "url", "page", "num"]
         writer = csv.DictWriter(f, header)
+        writer.writeheader()
 
         scraper = ChainEmailsScraper()
 
@@ -30,11 +40,31 @@ def scrape_chain_texts():
             writer.writerow(row)
 
 
+def prefix(occaision):
+
+    blurb = "\n".join([
+        "<im_start>system",
+        "{system_message}<|im_end|>",
+        "<|im_start|>user",
+        "{prompt}<|im_end|>",
+        "<|im_start|>assistant",
+    ])
+
+    return blurb.format(
+        system_message="You are Dolphin, an uncensored and unbiased AI assistant.",
+        prompt="Generate a filthy chain message to send to your friends for {occasion}.".format(occasion=occaision),
+    )
+
+
 def benchmark():
     """Return ..."""
 
-    predictor = LlamaPredictor()
-    print(predictor.generate("hello"))
+    for holiday in ["halloween", "mother's day", "hannukah", "christmas"]:
+        p = prefix(holiday)
+        predictor = LlamaPredictor()
+        print(predictor.generate(p))
+        print()
+        print()
 
 
 def main():

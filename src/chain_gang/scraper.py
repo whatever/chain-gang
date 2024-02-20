@@ -74,3 +74,23 @@ class ChainEmailsScraper(object):
         for i, p in enumerate(self.source(browser)):
             if emoji.emoji_count(p) > 3:
                 yield p, url, -1, i
+
+
+class EmojiPastaScraper(object):
+
+    EXAMPLE_URL = "https://www.reddit.com/r/emojipasta/comments/1ar5x34/request_worst_day_of_my_life/"
+    EXAMPLE_URL = "https://www.reddit.com/r/emojipasta/comments/1auoe34/happy_presidents_day/"
+
+    def __init__(self):
+        pass
+
+    def scrape_page(self, url: str) -> str:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        div = soup.find("div", class_="text-neutral-content")
+        thing = div.find("p")
+        return thing.text.strip()
+
+    def posts(self) -> Iterable[Any]:
+        res = self.scrape_page(self.EXAMPLE_URL)
+        yield res

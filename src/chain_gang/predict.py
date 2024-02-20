@@ -22,4 +22,4 @@ class LlamaPredictor(object):
     def generate(self, text: str) -> Any:
         """Return a response"""
 
-        return self.llama(text)
+        return self.llama(text, max_tokens=1024)
