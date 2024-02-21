@@ -1,43 +1,53 @@
 import argparse
 import csv
+import sys
 
+from chain_gang.logger import get_logger
 from chain_gang.scraper import ChainTextsScraper, ChainEmailsScraper, EmojiPastaScraper
 from chain_gang.predict import LlamaPredictor
 
 
-def scrape_chain_texts():
+logger = get_logger(__name__)
+
+
+def scrape_chain_texts(chain_texts, chain_emails, emoji_pasta):
     """..."""
 
 
-    scraper = EmojiPastaScraper()
+    with open("chain_messages_all.csv", "w") as f:
 
-    for i, post in enumerate(scraper.posts()):
-        print(f"{i} => {post}")
-
-
-    return
-
-    with open("chain_texts.csv", "w") as f:
-
-        header = ["id", "text", "url", "page", "num"]
+        header = ["id", "text", "url", "page", "num", "title", "source"]
         writer = csv.DictWriter(f, header)
         writer.writeheader()
 
-        scraper = ChainEmailsScraper()
+        if not any([chain_texts, chain_emails, emoji_pasta]):
+            raise ValueError("No scraper specified")
 
-        for i, post in enumerate(scraper.posts()):
-            row = [i] + list(post)
-            row = dict(zip(header, row))
-            writer.writerow(row)
-            print(f"{i} => {post}")
+        if emoji_pasta:
+            scraper = EmojiPastaScraper()
+            for i, post in enumerate(scraper.posts()):
+                row = post._asdict()
+                row["id"] = i
+                writer.writerow(row)
+                f.flush()
 
-        scraper = ChainTextsScraper()
+        if chain_emails:
+            scraper = ChainEmailsScraper()
+            for i, post in enumerate(scraper.posts()):
+                row = [i] + list(post)
+                row = dict(zip(header, row))
+                logger.debug("recording chain email: %s", row["text"][0:10] + "...")
+                writer.writerow(row)
+                f.flush()
 
-        for i, post in enumerate(scraper.posts()):
-            row = [i] + list(post)
-            row = dict(zip(header, row))
-            print(f"{i} => {row['page']}")
-            writer.writerow(row)
+        if chain_texts:
+            scraper = ChainTextsScraper()
+            for i, post in enumerate(scraper.posts()):
+                row = [i] + list(post)
+                row = dict(zip(header, row))
+                logger.debug("recording chain email: %s", row["text"][0:10] + "...")
+                writer.writerow(row)
+                f.flush()
 
 
 def prefix(occaision):
@@ -75,14 +85,20 @@ def main():
     subparser = parser.add_subparsers(dest="command", help="subcommand to run")
 
     scrape_parser = subparser.add_parser("scrape", help="scrape chain texts")
-    scrape_parser.add_argument("--texts", action="store_true", help="scrape chain texts")
+    scrape_parser.add_argument("--chain-texts", action="store_true", help="scrape chain texts")
+    scrape_parser.add_argument("--chain-emails", action="store_true", help="scrape chain emails")
+    scrape_parser.add_argument("--emoji-pasta", action="store_true", help="scrape emoji pasta")
 
     _ = subparser.add_parser("benchmark", help="benchmark the model")
 
     args = parser.parse_args()
 
     if args.command == "scrape":
-        scrape_chain_texts()
+        scrape_chain_texts(
+            args.chain_texts,
+            args.chain_emails,
+            args.emoji_pasta,
+        )
 
     elif args.command == "benchmark":
         benchmark()

@@ -26,5 +26,9 @@ CMAKE_ARGS="-DLLAMA_METAL=on" pip install -U llama-cpp-python --no-cache-dir
 
 
 ```bash
-chain_gang
+chain_gang scrape
 ```
+
+### TODO
+
+* [ ] scrape multiple paragraphs from reddit

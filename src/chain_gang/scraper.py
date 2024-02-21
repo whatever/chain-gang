@@ -1,11 +1,23 @@
 import emoji
 import requests
 import time
+import urllib.parse
 
 from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup
+from chain_gang.logger import get_logger
+from collections import namedtuple
 from selenium import webdriver
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional, Tuple
+
+
+logger = get_logger(__name__)
+
+
+ChainTextRow = namedtuple(
+    "ChainTextRow",
+    ["text", "url", "page", "num", "title", "source"],
+)
 
 
 class Scraper(ABC):
@@ -36,10 +48,17 @@ class ChainTextsScraper(Scraper):
             soup = BeautifulSoup(response.text, "html.parser")
             titles = soup.find_all("h2", class_="title")
             for num, t in enumerate(titles):
-                yield t.find("a").text, url, page, num
+                yield ChainTextRow(
+                    text=t.find("a").text,
+                    url=url,
+                    page=page,
+                    num=num,
+                    title=None,
+                    source="chain-texts",
+                )
 
 
-class ChainEmailsScraper(object):
+class ChainEmailsScraper(Scraper):
 
     URL = "https://www.tumblr.com/chainemails"
 
@@ -73,7 +92,14 @@ class ChainEmailsScraper(object):
 
         for i, p in enumerate(self.source(browser)):
             if emoji.emoji_count(p) > 3:
-                yield p, url, -1, i
+                yield ChainTextRow(
+                    text=p,
+                    url=url,
+                    page=-1,
+                    num=i,
+                    title=None,
+                    source="chain-emails",
+                )
 
 
 class EmojiPastaScraper(object):
@@ -86,12 +112,27 @@ class EmojiPastaScraper(object):
         pass
 
 
-    def scrape_page(self, url: str) -> str:
+    def scrape_page(self, url: str) -> Tuple[Optional[str]]:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
         div = soup.find("div", class_="text-neutral-content")
+
+        title = soup.find("h1", {"slot": "title"})
+
+        if not title or not title.text:
+            return None, None
+
+        title = title.text.strip()
+
+        if not div:
+            return None, None
+
         thing = div.find("p")
-        return thing.text.strip()
+
+        if not thing or not thing.text:
+            return None, None
+
+        return title, thing.text.strip()
 
     def post_pages(self, browser, limit=100) -> Iterable[str]:
         """Yield url's of the posts on the front page of the subreddit."""
@@ -103,7 +144,7 @@ class EmojiPastaScraper(object):
         
         y = 0
         last = -1
-        limit = 2
+        limit = 30
 
         hits = set()
 
@@ -114,28 +155,47 @@ class EmojiPastaScraper(object):
             html_source_code = browser.execute_script("return document.body.innerHTML;")
             html_soup = BeautifulSoup(html_source_code, 'html.parser')
 
+
             for a in html_soup.find_all("a"):
+
                 if not a.get("href", "").startswith("/r/emojipasta/comments/"):
                     continue
+
                 if a["href"] in hits:
                     continue
-                hits.add(a["href"])
-                yield a["href"]
 
-            time.sleep(1)
-            print("scrolliung")
+                hits.add(a["href"])
+                yield urllib.parse.urljoin("https://reddit.com/", a["href"])
+
+            time.sleep(2)
             count += 1
 
-        yield ""
-
-    def posts(self) -> Iterable[Any]:
+    def posts(self) -> Iterable[ChainTextRow]:
 
         driver = webdriver.Firefox()
         driver.get(self.FRONTPAGE_URL)
-        print("<<<")
 
-        for url in self.post_pages(driver):
-            print(url)
+        for i, url in enumerate(self.post_pages(driver)):
 
-        res = self.scrape_page(self.EXAMPLE_URL)
-        yield res
+            title, res = self.scrape_page(url)
+
+            if not res:
+                logger.debug("page text is empty: %s", url)
+                continue
+
+            if not emoji.emoji_count(res) > 3:
+                logger.debug("page text has less than 3 emojis: %s", url)
+                continue
+
+            logger.debug(f"scraped url sucessfully: %s", url)
+
+            yield ChainTextRow(
+                text=res,
+                url=url,
+                page=-1,
+                num=i,
+                title=title,
+                source="r/emojipasta",
+            )
+
+        driver.quit()
