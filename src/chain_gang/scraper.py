@@ -78,11 +78,13 @@ class ChainEmailsScraper(object):
 
 class EmojiPastaScraper(object):
 
+    FRONTPAGE_URL = "https://www.reddit.com/r/emojipasta/"
     EXAMPLE_URL = "https://www.reddit.com/r/emojipasta/comments/1ar5x34/request_worst_day_of_my_life/"
     EXAMPLE_URL = "https://www.reddit.com/r/emojipasta/comments/1auoe34/happy_presidents_day/"
 
     def __init__(self):
         pass
+
 
     def scrape_page(self, url: str) -> str:
         response = requests.get(url)
@@ -91,6 +93,49 @@ class EmojiPastaScraper(object):
         thing = div.find("p")
         return thing.text.strip()
 
+    def post_pages(self, browser, limit=100) -> Iterable[str]:
+        """Yield url's of the posts on the front page of the subreddit."""
+
+        count = 0
+
+        html_source_code = browser.execute_script("return document.body.innerHTML;")
+        html_soup = BeautifulSoup(html_source_code, 'html.parser')
+        
+        y = 0
+        last = -1
+        limit = 2
+
+        hits = set()
+
+        while y != last and count < limit:
+            y = browser.execute_script("return document.body.scrollHeight")
+            browser.execute_script(f"window.scrollTo(0, {y})")
+
+            html_source_code = browser.execute_script("return document.body.innerHTML;")
+            html_soup = BeautifulSoup(html_source_code, 'html.parser')
+
+            for a in html_soup.find_all("a"):
+                if not a.get("href", "").startswith("/r/emojipasta/comments/"):
+                    continue
+                if a["href"] in hits:
+                    continue
+                hits.add(a["href"])
+                yield a["href"]
+
+            time.sleep(1)
+            print("scrolliung")
+            count += 1
+
+        yield ""
+
     def posts(self) -> Iterable[Any]:
+
+        driver = webdriver.Firefox()
+        driver.get(self.FRONTPAGE_URL)
+        print("<<<")
+
+        for url in self.post_pages(driver):
+            print(url)
+
         res = self.scrape_page(self.EXAMPLE_URL)
         yield res
