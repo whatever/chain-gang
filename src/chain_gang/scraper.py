@@ -112,7 +112,7 @@ class EmojiPastaScraper(object):
         pass
 
 
-    def scrape_page(self, url: str) -> Tuple[Optional[str]]:
+    def scrape_page(self, url: str) -> Tuple[str | None, str | None]:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
         div = soup.find("div", class_="text-neutral-content")

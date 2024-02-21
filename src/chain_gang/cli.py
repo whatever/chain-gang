@@ -34,8 +34,8 @@ def scrape_chain_texts(chain_texts, chain_emails, emoji_pasta):
         if chain_emails:
             scraper = ChainEmailsScraper()
             for i, post in enumerate(scraper.posts()):
-                row = [i] + list(post)
-                row = dict(zip(header, row))
+                row = post._asdict()
+                row["id"] = i
                 logger.debug("recording chain email: %s", row["text"][0:10] + "...")
                 writer.writerow(row)
                 f.flush()
@@ -43,8 +43,8 @@ def scrape_chain_texts(chain_texts, chain_emails, emoji_pasta):
         if chain_texts:
             scraper = ChainTextsScraper()
             for i, post in enumerate(scraper.posts()):
-                row = [i] + list(post)
-                row = dict(zip(header, row))
+                row = post._asdict()
+                row["id"] = i
                 logger.debug("recording chain email: %s", row["text"][0:10] + "...")
                 writer.writerow(row)
                 f.flush()
