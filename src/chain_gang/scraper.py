@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from chain_gang.logger import get_logger
 from collections import namedtuple
 from selenium import webdriver
-from typing import Any, Iterable, Optional, Tuple
+from typing import Any, Iterable, Tuple
 
 
 logger = get_logger(__name__)
@@ -111,7 +111,6 @@ class EmojiPastaScraper(object):
     def __init__(self):
         pass
 
-
     def scrape_page(self, url: str) -> Tuple[str | None, str | None]:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -141,7 +140,7 @@ class EmojiPastaScraper(object):
 
         html_source_code = browser.execute_script("return document.body.innerHTML;")
         html_soup = BeautifulSoup(html_source_code, 'html.parser')
-        
+
         y = 0
         last = -1
         limit = 30
@@ -154,7 +153,6 @@ class EmojiPastaScraper(object):
 
             html_source_code = browser.execute_script("return document.body.innerHTML;")
             html_soup = BeautifulSoup(html_source_code, 'html.parser')
-
 
             for a in html_soup.find_all("a"):
 
@@ -187,7 +185,7 @@ class EmojiPastaScraper(object):
                 logger.debug("page text has less than 3 emojis: %s", url)
                 continue
 
-            logger.debug(f"scraped url sucessfully: %s", url)
+            logger.debug("scraped url sucessfully: %s", url)
 
             yield ChainTextRow(
                 text=res,

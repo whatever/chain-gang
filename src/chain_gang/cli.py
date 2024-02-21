@@ -1,6 +1,5 @@
 import argparse
 import csv
-import sys
 
 from chain_gang.logger import get_logger
 from chain_gang.scraper import ChainTextsScraper, ChainEmailsScraper, EmojiPastaScraper
@@ -11,8 +10,7 @@ logger = get_logger(__name__)
 
 
 def scrape_chain_texts(chain_texts, chain_emails, emoji_pasta):
-    """..."""
-
+    """Scrape chain messages from a few sources, and write to a csv file."""
 
     with open("chain_messages_all.csv", "w") as f:
 
